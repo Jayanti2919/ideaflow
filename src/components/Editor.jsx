@@ -1,33 +1,41 @@
-import React, { useEffect } from 'react'
-import {EditorState} from "prosemirror-state"
-import {EditorView} from "prosemirror-view"
-import {Schema, DOMParser} from "prosemirror-model"
-import {schema} from "prosemirror-schema-basic"
-import {addListNodes} from "prosemirror-schema-list"
-import {exampleSetup} from "prosemirror-example-setup"
-import '../assets/editor.css'
+import React, { useEffect, useRef } from 'react';
+import { EditorState } from 'prosemirror-state';
+import { EditorView } from 'prosemirror-view';
+import { Schema, DOMParser } from 'prosemirror-model';
+import { schema } from 'prosemirror-schema-basic';
+import { addListNodes } from 'prosemirror-schema-list';
+import { exampleSetup } from 'prosemirror-example-setup';
+import '../assets/editor.css';
 
 const Editor = () => {
-    useEffect(()=>{
-        const mySchema = new Schema({
-            nodes: addListNodes(schema.spec.nodes, "paragraph block*", "block"),
-            marks: schema.spec.marks
-          })
-          
-          window.view = new EditorView(document.querySelector("#editor"), {
-            state: EditorState.create({
-              doc: DOMParser.fromSchema(mySchema).parse(document.querySelector("#content")),
-              plugins: exampleSetup({schema: mySchema})
-            })
-          })
-    }, [])
-  return (
-    <div className='px-10'>
-        <div id="editor"/>
-        <div id="content" />
-        <div className='h-0.5 w-full bg-secondary'></div>
-    </div>
-  )
-}
+  const editorRef = useRef(null);
 
-export default Editor
+  useEffect(() => {
+    const mySchema = new Schema({
+      nodes: addListNodes(schema.spec.nodes, 'paragraph (list_item)*', 'block'),
+      marks: schema.spec.marks,
+    });
+
+    const editorView = new EditorView(editorRef.current, {
+      state: EditorState.create({
+        doc: DOMParser.fromSchema(mySchema).parse(document.querySelector('#content')),
+        plugins: exampleSetup({ schema: mySchema }),
+      }),
+    });
+
+    return () => {
+      // Clean up the EditorView when the component unmounts
+      editorView.destroy();
+    };
+  }, []);
+
+  return (
+    <div className='border-b-2 border-secondary px-5'>
+      <div ref={editorRef} />
+      <div id='content' style={{ display: 'none' }}>
+      </div>
+    </div>
+  );
+};
+
+export default Editor;
