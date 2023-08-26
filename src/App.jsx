@@ -9,7 +9,6 @@ function App() {
   const addEditor = () => {
     setEditors([...editors, <Editor key={editors.length} id={count}/>]);
     setCount(count+1)
-    console.log(count)
     editors.pop();
   };
 

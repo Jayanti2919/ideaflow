@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { EditorState } from "prosemirror-state";
-import { Plugin, TextSelection } from 'prosemirror-state';
-import { keymap } from 'prosemirror-keymap';
+import { Plugin, TextSelection, PluginKey } from "prosemirror-state";
+import { keymap } from "prosemirror-keymap";
 import { EditorView } from "prosemirror-view";
 import { Schema, DOMParser } from "prosemirror-model";
 import { schema } from "prosemirror-schema-basic";
@@ -16,15 +16,15 @@ const Editor = (props) => {
   const snap = useSnapshot(state);
   const [showDropdown, setShowDropdown] = useState(false);
   const [linkedIdea, setlinkedIdea] = useState("");
-  const [view, setView] = useState(null)
+  const [view, setView] = useState(null);
+  const [backspace, setBackspace] = useState(false);
 
   const handleAddValueToEditor = (value) => {
-    const currentEditorState = view.state; 
-    console.log(currentEditorState)
-    const currentContent = currentEditorState.doc.textContent; 
+    const currentEditorState = view.state;
+    const currentContent = currentEditorState.doc.textContent;
     const newValue = value;
     const tr = currentEditorState.tr.insertText(newValue);
-    const newEditorState = currentEditorState.apply(tr); 
+    const newEditorState = currentEditorState.apply(tr);
 
     view.updateState(newEditorState);
     state.map[props.id] = newEditorState.doc.textContent;
@@ -55,10 +55,42 @@ const Editor = (props) => {
         state.map[props.id] = textContent;
       },
     });
-    setView(editorView)
+    setView(editorView);
+
+    const handleKeyDown = (event) => {
+      if (event.key === "Backspace") {
+        if (state.map[props.id].includes("<>")) {
+          if (!backspace) {
+            setBackspace(true);
+            event.preventDefault();
+            const { $from, $to } = editorView.state.selection;
+            const index = state.map[props.id].indexOf('<')
+            console.log(index)
+            const tr = editorView.state.tr.setSelection(
+              TextSelection.create(editorView.state.doc, $from.start()+index, $to.end())
+            );
+            editorView.dispatch(tr);
+            setShowDropdown(false)
+          } else {
+            const { $from, $to } = editorView.state.selection;
+            const index = state.map[props.id].indexOf('<')
+            console.log(index)
+            const tr = editorView.state.tr.deleteRange($from.start()+index, $to.end());
+            editorView.dispatch(tr);
+            setBackspacePressed(false);
+            setShowDropdown(false)
+          }
+        }
+      } else {
+        setBackspace(false);
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
 
     return () => {
       editorView.destroy();
+      document.removeEventListener("keydown", handleKeyDown);
     };
   }, []);
   const values = Object.values(state.map).filter(
