@@ -13,7 +13,7 @@ function App() {
   };
 
   return (
-      <div className="text-white bg-primary min-h-screen h-fit">
+      <div className=" bg-primary min-h-screen h-fit">
         <Nav addEditor={addEditor} />
         <div className="flex gap-5 flex-col-reverse">{editors}</div>
       </div>

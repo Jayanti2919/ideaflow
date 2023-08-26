@@ -1,11 +1,9 @@
 import React, { useEffect, useRef, useState } from "react";
 import { EditorState } from "prosemirror-state";
-import { Plugin, TextSelection, PluginKey } from "prosemirror-state";
-import { keymap } from "prosemirror-keymap";
+import { TextSelection } from "prosemirror-state";
 import { EditorView } from "prosemirror-view";
 import { Schema, DOMParser } from "prosemirror-model";
 import { schema } from "prosemirror-schema-basic";
-import { addListNodes } from "prosemirror-schema-list";
 import { exampleSetup } from "prosemirror-example-setup";
 import "../assets/editor.css";
 import state from "../store";
@@ -15,15 +13,25 @@ const Editor = (props) => {
   const editorRef = useRef(null);
   const snap = useSnapshot(state);
   const [showDropdown, setShowDropdown] = useState(false);
-  const [linkedIdea, setlinkedIdea] = useState("");
   const [view, setView] = useState(null);
   const [backspace, setBackspace] = useState(false);
+  const [currschema, setCurrSchema] = useState(null);
 
   const handleAddValueToEditor = (value) => {
     const currentEditorState = view.state;
-    const currentContent = currentEditorState.doc.textContent;
     const newValue = value;
-    const tr = currentEditorState.tr.insertText(newValue);
+
+    const marks = currschema.marks;
+    const mark = marks.textColor.create({ color: "#80CAD4" });
+
+    const tr = currentEditorState.tr
+      .insertText(newValue)
+      .addMark(
+        currentEditorState.selection.from,
+        currentEditorState.selection.to,
+        mark
+      );
+
     const newEditorState = currentEditorState.apply(tr);
 
     view.updateState(newEditorState);
@@ -32,10 +40,27 @@ const Editor = (props) => {
 
   useEffect(() => {
     const mySchema = new Schema({
-      nodes: addListNodes(schema.spec.nodes, "paragraph (list_item)*", "block"),
-      marks: schema.spec.marks,
+      nodes: schema.spec.nodes,
+      marks: {
+        ...schema.spec.marks,
+        textColor: {
+          attrs: {
+            color: {default: '#F2F1F2'},
+          },
+          inline: true,
+          group: "inline",
+          parseDOM: [
+            {
+              style: "color",
+              getAttrs: (color) => ({ color }),
+            },
+          ],
+          toDOM: (mark) => ["p", { style: `color: ${mark.attrs.color}` }, 0],
+        },
+      },
     });
 
+    setCurrSchema(mySchema);
     const editorView = new EditorView(editorRef.current, {
       state: EditorState.create({
         doc: DOMParser.fromSchema(mySchema).parse(
@@ -47,7 +72,7 @@ const Editor = (props) => {
         const newState = editorView.state.apply(transaction);
         editorView.updateState(newState);
         const textContent = newState.doc.textContent;
-        if (textContent.includes("<>")) {
+        if (textContent.slice(-2) === '<>') {
           setShowDropdown(true);
         } else {
           setShowDropdown(false);
@@ -64,21 +89,28 @@ const Editor = (props) => {
             setBackspace(true);
             event.preventDefault();
             const { $from, $to } = editorView.state.selection;
-            const index = state.map[props.id].indexOf('<')
-            console.log(index)
+            const index = state.map[props.id].indexOf("<");
+            console.log(index);
             const tr = editorView.state.tr.setSelection(
-              TextSelection.create(editorView.state.doc, $from.start()+index, $to.end())
+              TextSelection.create(
+                editorView.state.doc,
+                $from.start() + index,
+                $to.end()
+              )
             );
             editorView.dispatch(tr);
-            setShowDropdown(false)
+            setShowDropdown(false);
           } else {
             const { $from, $to } = editorView.state.selection;
-            const index = state.map[props.id].indexOf('<')
-            console.log(index)
-            const tr = editorView.state.tr.deleteRange($from.start()+index, $to.end());
+            const index = state.map[props.id].indexOf("<");
+            console.log(index);
+            const tr = editorView.state.tr.deleteRange(
+              $from.start() + index,
+              $to.end()
+            );
             editorView.dispatch(tr);
             setBackspacePressed(false);
-            setShowDropdown(false)
+            setShowDropdown(false);
           }
         }
       } else {
@@ -97,10 +129,10 @@ const Editor = (props) => {
     (value) => value !== state.map[props.id]
   );
   return (
-    <div className="border-b-2 border-secondary px-5">
+    <div className="border-b-2 border-secondary px-5 overflow-hidden text-white">
       <div ref={editorRef} />
       {showDropdown && (
-        <ul className="bg-secondary px-5 py-2 list-none">
+        <ul className="bg-secondary px-5 py-2 list-none mb-1">
           {values.map((val) => (
             <li
               className="cursor-pointer"
