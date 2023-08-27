@@ -27,11 +27,10 @@ const Editor = (props) => {
     const tr = currentEditorState.tr
       .insertText(newValue)
       .addMark(
-        currentEditorState.selection.from,
-        currentEditorState.selection.to,
+        currentEditorState.selection.from - 2,
+        currentEditorState.selection.to + newValue.length,
         mark
       );
-
     const newEditorState = currentEditorState.apply(tr);
 
     view.updateState(newEditorState);
@@ -55,7 +54,7 @@ const Editor = (props) => {
               getAttrs: (color) => ({ color }),
             },
           ],
-          toDOM: (mark) => ["p", { style: `color: ${mark.attrs.color}` }, 0],
+          toDOM: (mark) => ["span", { style: `color: ${mark.attrs.color}` }, 0],
         },
       },
     });
