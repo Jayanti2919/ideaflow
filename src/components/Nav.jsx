@@ -5,9 +5,9 @@ import { BiEdit } from 'react-icons/bi'
 const Nav = ({addEditor}) => {
   return (
     <div className='py-5 relative'>
-      <span className='absolute top-0 left-0 text-white font-medium'>Submitted by: Jayanti Goswami</span>
 
     <div className='flex gap-5 items-center justify-center pb-5 text-white'>
+      <span className='text-white'>By: Jayanti Goswami</span>
         <div className='flex gap-2 w-fit pl-5 pr-48 rounded-md items-center bg-secondary py-2'>
             <BsSearch />
             <input type="text" placeholder='Search Notes' className='bg-secondary outline-none'/>
